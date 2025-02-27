@@ -34,7 +34,7 @@ def add_song(song: Song):
 @router.put("/update/{song_id}", response_model=Song)
 def update_song(song_id: int, song_obj: Song):
     for index, song in enumerate(memory_db["songs"]):
-        if song.id == song_id:
+          if song.id == song_id:
             memory_db["songs"][index] = song_obj
             return song_obj
     return {"error": "Song not found"}
