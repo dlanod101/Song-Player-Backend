@@ -2,13 +2,24 @@ from pydantic import BaseModel
 from typing import List
 
 
-class Song(BaseModel):
-    id: int
+class SongBase(BaseModel):
     title: str
     image: str
     artiste: str
     is_liked: bool
     audio_url: str
 
-class Songs(BaseModel):
-    songs: List[Song]
+    # class Config:
+    #     orm_mode: True
+
+class SongCreate(SongBase):
+    pass
+
+class Song(SongBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+class SongList(BaseModel):
+    song_ids: List[int]
