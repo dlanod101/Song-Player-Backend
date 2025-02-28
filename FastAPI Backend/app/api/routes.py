@@ -4,6 +4,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from database import get_db
 from models import SongModel
+from services.cloudinary_helper import upload_item, delete_image, upload_audio
 
 router = APIRouter()
 
@@ -29,6 +30,8 @@ def read_song(song_id: int, db: Session = Depends(get_db)):
 # Add a song
 @router.post("/create/", response_model=Song)
 def add_song(song: SongBase, db: Session = Depends(get_db)):
+    song.image = upload_item(song.image, f"{song.title} by {song.artiste} image")
+    song.audio_url = upload_audio(song.audio_url, f"{song.title} by {song.artiste} audio")
     db_song = SongModel(**song.model_dump())
     db.add(db_song)
     db.commit()
@@ -56,6 +59,7 @@ def delete_song(song_id: int, db: Session = Depends(get_db)):
     if db_song is None:
         raise HTTPException(status_code=404, detail="Song not found")
 
+    delete_image(f"{db_song.title} by {db_song.artiste} image")
     db.delete(db_song)
     db.commit()
     return db_song
@@ -70,7 +74,7 @@ def delete_selected_songs(song_list: SongList, db: Session = Depends(get_db)):
             .filter(SongModel.id.in_(song_list.song_ids))
             .delete(synchronize_session=False)
         )
-
+        [delete_image(f"{song.title} by {song.artiste} image") for song in db.query(SongModel).filter(SongModel.id.in_(song_list.song_ids))]
         db.commit()
 
         if deleted_count == 0:
@@ -97,6 +101,8 @@ def delete_all_songs(db: Session = Depends(get_db)):
 
     for db_song in db_songs:
         db.delete(db_song)
+        delete_image(f"{db_song.title} by {db_song.artiste} image")
+        
 
     db.commit()
     return {"message": "All songs have been deleted"}
